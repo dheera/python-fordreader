@@ -37,7 +37,7 @@ class FordReader(object):
             (5))
         if response == None:
             return
-        return (utils.bytes2int(x[3:4]) - 7800) / 10.0
+        return (int.from_bytes(x[3:4]) - 7800, "big") / 10.0
 
     def read_obdii_vehicle_speed(self):
         response = self.device.query(
@@ -47,7 +47,7 @@ class FordReader(object):
             (5))
         if response == None:
             return
-        return utils.bytes2int(x[3:4]) / 128.0
+        return int.from_bytes(x[3:4], "big") / 128.0
 
     def read_obdii_rpm(self):
         response = self.device.query(
@@ -57,7 +57,7 @@ class FordReader(object):
             (5))
         if response == None:
             return
-        return utils.bytes2int(x[3:4]) / 4.0
+        return int.from_bytes(x[3:4], "big") / 4.0
 
     def read_pc_accelerator_fraction(self):
         response = self.device.query(
@@ -67,7 +67,7 @@ class FordReader(object):
             (5))
         if response == None:
             return
-        return utils.bytes2int(x[3:4]) / 255.0
+        return int.from_bytes(x[3:4], "big") / 255.0
 
     def read_api_gps(self):
         response = self.device.query(
