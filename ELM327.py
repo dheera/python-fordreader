@@ -12,16 +12,22 @@ class ELM327(object):
 
         self.last_header = None
         self.last_response_address = None
-        self.last_command = None
+        self.last_command_str = None
 
+        self.reset()
+
+    def reset(self):
+        if debug:
+            print("resetting ...")
         self.send("ATZ")    # reset
         time.sleep(0.5)
         self.send("ATS0")   # spaces off
         self.send("ATE0")   # echo off
+        self.send("ATL0")   # line feeds off
         self.send("ATH1")   # headers on
         self.send("ATST%02d" % int(timeout_response / 0.004)) # response timeout
 
-    def query(self, header, response_address, pid, response_structure):
+    def query(self, header, response_address, command, response_structure):
         if header != self.last_header:
             self.send("ATSH%06x" % header)
             self.last_header = header
@@ -31,14 +37,14 @@ class ELM327(object):
             self.last_response_address = response_address
 
         response_num_frames = len(response_structure)
-        if pid <= 0xFFFF:
-            command = "%04x%d" % (pid, response_num_frames)
+        if command <= 0xFFFF:
+            command_str = "%04x%d" % (command, response_num_frames)
         else:
-            command = "%06x%d" % (pid, response_num_frames)
+            command_str = "%06x%d" % (command, response_num_frames)
 
-        if command != last_command:
-            self.send(command)
-            last_command = command
+        if command_str != last_command_str:
+            self.send(command_str)
+            last_command_str = command_str
         else:
             self.send("")
 

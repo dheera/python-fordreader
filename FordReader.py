@@ -5,76 +5,100 @@ import utils
 
 # modules
 
-MODULE_ABS = 0x760     # Anti-lock brake system
-MODULE_API = 0x7D0     # Accessory protocol interface
-MODULE_OBDII = 0x7E0   # OBD-II standard
-MODULE_PC = 0x7E8      # Powertrain control
-MODULE_SAS = 0x797     # Steering angle sensor
+MOD_ABS = 0x760     # Anti-lock brake system
+MOD_BC = 0x726      # Body control
+MOD_API = 0x7D0     # Accessory protocol interface
+MOD_OBDII = 0x7E0   # OBD-II standard
+MOD_PC = 0x7E8      # Powertrain control
+MOD_SAS = 0x797     # Steering angle sensor
 
-# pids
+# commands
 
-PID_ABS_STEERING_ANGLE = 0x223302
+CMD_ABS_ACCELERATION_X = 0x222B0C
+CMD_ABS_WHEEL_SPEED_FL = 0x222B06
+CMD_ABS_WHEEL_SPEED_FR = 0x222B07
+CMD_ABS_WHEEL_SPEED_RL = 0x222B08
+CMD_ABS_WHEEL_SPEED_RR = 0x222B09
+CMD_ABS_ACCELERATION_Y = 0x222B11
+CMD_ABS_STEERING_ANGLE = 0x223302
 
-PID_API_GPS = 0x228012
+CMD_API_GPS = 0x228012
 
-PID_OBDII_VEHICLE_SPEED = 0x221505
-PID_OBDII_RPM = 0x22F40C
+CMD_BC_BATTERY_CHARGE = 0x224028
+CMD_BC_BATTERY_TEMPERATURE = 0x224029
+CMD_BC_INSIDE_TEMPERATURE = 0x22DD04
+CMD_BC_OUTSIDE_TEMPERATURE = 0x22DD05
+CMD_BC_IGNITION_SWITCH = 0x22411F
 
-PID_PC_ACCELERATOR_FRACTION = 0x22032B
+CMD_OBDII_RPM = 0x22F40C
+CMD_OBDII_TOTAL_DISTANCE = 0x22DD01
+CMD_OBDII_VEHICLE_SPEED = 0x221505
 
-PID_SAS_STEERING_ANGLE = 0x22203A
+CMD_PC_ACCELERATOR_FRACTION = 0x22032B
+
+CMD_SAS_STEERING_ANGLE = 0x22203A
 
 class FordReader(object):
-    def __init__(self, port = '/dev/ttyUSB0', baudrate = 500000, timeout_serial = 0.1, timeout_response = 0.05, debug = False):
+    def __init__(self, port = '/dev/ttyUSB0', baudrate = 500000, timeout_serial = 0.1, timeout_resp = 0.05, debug = False):
         self.debug = debug
-        self.device = ELM327(port = port, baudrate = baudrate, timeout_serial = timeout_serial, timeout_response = timeout_response, debug = debug)
+        self.device = ELM327(port = port, baudrate = baudrate, timeout_serial = timeout_serial, timeout_resp = timeout_resp, debug = debug)
 
     def read_abs_steering_angle(self):
-        response = self.device.query(
-            MODULE_ABS,
-            MODULE_ABS + 8,
-            PID_ABS_STEERING_ANGLE,
-            (5))
-        if response == None:
+        resp = self.device.query(MOD_ABS, MOD_ABS + 8, CMD_ABS_STEERING_ANGLE, (5))
+        if resp == None:
             return
         return (int.from_bytes(x[3:4]) - 7800, "big") / 10.0
 
+    def read_abs_wheel_speed_fl(self):
+        resp = self.device.query(MOD_ABS, MOD_ABS + 8, CMD_ABS_WHEEL_SPEED_FL, (5))
+        if resp == None:
+            return
+        return int.from_bytes(x[3:4], "big")
+
+    def read_abs_wheel_speed_fr(self):
+        resp = self.device.query(MOD_ABS, MOD_ABS + 8, CMD_ABS_WHEEL_SPEED_FR, (5))
+        if resp == None:
+            return
+        return int.from_bytes(x[3:4], "big")
+
+    def read_abs_wheel_speed_rl(self):
+        resp = self.device.query(MOD_ABS, MOD_ABS + 8, CMD_ABS_WHEEL_SPEED_RL, (5))
+        if resp == None:
+            return
+        return int.from_bytes(x[3:4], "big")
+
+    def read_abs_wheel_speed_rr(self):
+        resp = self.device.query(MOD_ABS, MOD_ABS + 8, CMD_ABS_WHEEL_SPEED_RR, (5))
+        if resp == None:
+            return
+        return int.from_bytes(x[3:4], "big")
+
     def read_obdii_vehicle_speed(self):
-        response = self.device.query(
-            MODULE_OBDII,
-            MODULE_OBDII + 8,
-            PID_OBDII_VEHICLE_SPEED,
-            (5))
-        if response == None:
+        resp = self.device.query(MOD_OBDII, MOD_OBDII + 8, CMD_OBDII_VEHICLE_SPEED, (5))
+        if resp == None:
             return
         return int.from_bytes(x[3:4], "big") / 128.0
 
     def read_obdii_rpm(self):
-        response = self.device.query(
-            MODULE_OBDII,
-            MODULE_OBDII + 8,
-            PID_OBDII_RPM,
-            (5))
-        if response == None:
+        resp = self.device.query(MOD_OBDII, MOD_OBDII + 8, CMD_OBDII_RPM, (5))
+        if resp == None:
             return
         return int.from_bytes(x[3:4], "big") / 4.0
 
+    def read_obdii_total_distance(self):
+        resp = self.device.query(MOD_OBDII, MOD_OBDII + 8, CMD_OBDII_TOTAL_DISTANCE, (5))
+        if resp == None:
+            return
+        return int.from_bytes(x[3:4], "big") / 1.0
+
     def read_pc_accelerator_fraction(self):
-        response = self.device.query(
-            MODULE_PCM,
-            MODULE_PCM + 8,
-            PID_PC_ACCELERATOR_FRACTION,
-            (5))
-        if response == None:
+        resp = self.device.query(MOD_PCM, MOD_PCM + 8, CMD_PC_ACCELERATOR_FRACTION, (5))
+        if resp == None:
             return
         return int.from_bytes(x[3:4], "big") / 255.0
 
     def read_api_gps(self):
-        response = self.device.query(
-            MODULE_API,
-            MODULE_API + 8,
-            PID_API_GPS,
-            (6,7,7))
+        resp = self.device.query(MOD_API, MOD_API + 8, CMD_API_GPS, (6,7,7))
         # TODO: figure out how to decode this
-        return response
+        return resp
 
