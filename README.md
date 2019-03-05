@@ -7,7 +7,7 @@ Example usage:
 ```
 #!/usr/bin/env python3
 
-f = FordReader(debug=False)
+f = FordReader(port = "/dev/ttyUSB0", baudrate = 500000)
 while True:
     print("rpm", f.read_obdii_rpm())
     print("speed", f.read_obdii_vehicle_speed())
@@ -20,7 +20,7 @@ Avoid switching back and forth between multiple modules. For example, if you nee
 ```
 #!/usr/bin/env python3
 
-f = FordReader(debug=False)
+f = FordReader(port = "/dev/ttyUSB0", baudrate = 500000)
 while True:
     print("steering angle", f.read_abs_steering_angle())
     print("speed", f.read_abs_vehicle_speed())
