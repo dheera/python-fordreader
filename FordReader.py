@@ -117,10 +117,10 @@ class FordReader(object):
         resp = self.device.query(MOD_PC, MOD_PC + 8, CMD_PC_ACCELERATOR_FRACTION, (5,))
         if resp == None:
             return
-        return int.from_bytes(resp[3:], "big") / 255.0
+        return int.from_bytes(resp[0][3:], "big") / 255.0
 
     def read_api_gps(self):
-        resp = self.device.query(MOD_API, MOD_API + 8, CMD_API_GPS, (6,7,7,))
+        resp = self.device.query(MOD_API, MOD_API + 8, CMD_API_GPS, (6,7,7))
         if resp == None:
             return
         lat = int.from_bytes(resp[1][1:3], "big", signed=True) / 60.0

@@ -63,58 +63,71 @@ class ELM327(object):
         self.ser.reset_input_buffer()
         self.send(command_str)
 
-        resp = self.receive_frames(resp_num_frames)
+        resp = self.receive_message()
 
         if resp == None:
             return
 
-        for i, line in enumerate(resp):
-            if resp_structure[i] != len(line):
-                if self.debug:
-                    print("invalid response, discarding")
+        if len(resp) != len(resp_structure):
+            if self.debug:
+                print("response did not match expected structure", resp)
                 return
 
         return resp
 
-    def receive(self, num_lines):
+    def receive(self):
         if self.debug:
-            print("receive", num_lines)
+            print("receive")
 
-        lines = []
-        for i in range(num_lines):
-            line = self.ser.read_until(b'\r')
-            lines.append(line.strip())
-        return(lines)
+        line = self.ser.read_until(b'\r')
+        return(line)
 
-    def receive_frames(self, num_frames):
+    def receive_message(self):
+        resp = [] 
+
         if self.debug:
-            print("receive_frames", num_frames)
+            print("receive_message")
 
-        resp = []
+        line = self.receive().replace(b'>',b'').replace(b'\r',b'')
 
-        if num_frames < 1:
-            return []
+        if b'NO DATA' in line:
+            return
 
-        elif num_frames == 1:
-            lines = self.receive(1)
+        if b'CAN ERROR' in line:
+            return
+
+        i = 0
+
+        if len(line) == 3:
+            # multi line message
+            total_num_bytes = int.from_bytes(binascii.unhexlify(b"0" + line), byteorder = "big")
+            received_num_bytes = 0
+
+            if self.debug:
+                print("begin multi-line response for bytes: ", total_num_bytes)
+            while received_num_bytes < total_num_bytes and i < 10:
+                line = self.receive().replace(b'>', b'').replace(b'\r',b'')
+                try:
+                    line_bytes = binascii.unhexlify(line[2:])
+                    received_num_bytes += len(line_bytes)
+                    resp.append(line_bytes)
+                except binascii.Error:
+                    if self.debug:
+                        print("error: received:", line)
+                    return
+
+                i += 1
+                
 
         else:
-            lines = self.receive(num_frames + 1)[1:]
-
-        for line in lines:
-            line = line.replace(b'>',b'')
-
-            if len(line) >= 3 and line[1:2] == b':':
-                line = line[2:]
-
+            # single-line message
             try:
                 line_bytes = binascii.unhexlify(line)
+                resp.append(line_bytes)
             except binascii.Error:
                 if self.debug:
                     print("error: received:", line)
                 return
-
-            resp.append(line_bytes)
 
         if self.debug:
             print("received:", resp)
@@ -137,7 +150,7 @@ class ELM327(object):
                 print("send attempt", i)
             self.reset_buffers()
             self.send(cmd)
-            resp = self.receive(1)
+            resp = self.receive()
             if b"OK" in resp:
                 if self.debug:
                     print("received OK, exiting", resp)
