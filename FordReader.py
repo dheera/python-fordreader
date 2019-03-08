@@ -53,54 +53,90 @@ class FordReader(object):
     ### ABS Anti-lock brake system ###
 
     def read_abs_acceleration_lat(self):
+        """
+        Queries ABS for acceleration in the lateral direction.
+        Returns a float in g's or None if unsuccessful.
+        """
         resp = self.device.query(MOD_ABS, MOD_ABS + 8, CMD_ABS_ACCELERATION_LAT, (5,))
         if resp == None:
             return
         return int.from_bytes(resp[0][3:], "big") / 256.0
 
     def read_abs_acceleration_lon(self):
+        """
+        Queries ABS for acceleration in the longitude direction.
+        Returns a float in g's or None if unsuccessful.
+        """
         resp = self.device.query(MOD_ABS, MOD_ABS + 8, CMD_ABS_ACCELERATION_LON, (5,))
         if resp == None:
             return
         return int.from_bytes(resp[0][3:], "big") / 256.0
 
     def read_abs_steering_angle(self):
+        """
+        Queries ABS for steering angle.
+        Returns a float in degrees or None if unsuccesssful. Right is negative.
+        """
         resp = self.device.query(MOD_ABS, MOD_ABS + 8, CMD_ABS_STEERING_ANGLE, (5,))
         if resp == None:
             return
         return (int.from_bytes(resp[0][3:], "big") - 7800) / 10.0
 
     def read_abs_total_distance(self):
+        """
+        Queries ABS for the total distance driven on the car (odometer)
+        Returns a float in km or None if unsuccessful.
+        """
         resp = self.device.query(MOD_ABS, MOD_ABS + 8, CMD_ABS_TOTAL_DISTANCE, (6,))
         if resp == None:
             return
         return int.from_bytes(resp[0][3:], "big") / 1.0
 
     def read_abs_vehicle_speed(self):
+        """
+        Queries ABS for current vehicle speed.
+        Returns a float in km/h or None if unsuccessful.
+        """
         resp = self.device.query(MOD_ABS, MOD_ABS + 8, CMD_ABS_VEHICLE_SPEED, (4,))
         if resp == None:
             return
         return int.from_bytes(resp[0][3:], "big") / 1.0
 
     def read_abs_wheel_speed_fl(self):
+        """
+        Queries ABS for front left wheel speed.
+        Returns a float in km/h or None if unsuccessful.
+        """
         resp = self.device.query(MOD_ABS, MOD_ABS + 8, CMD_ABS_WHEEL_SPEED_FL, (4,))
         if resp == None:
             return
         return int.from_bytes(resp[0][3:], "big") / 1.0
 
     def read_abs_wheel_speed_fr(self):
+        """
+        Queries ABS for front right wheel speed.
+        Returns a float in km/h or None if unsuccessful.
+        """
         resp = self.device.query(MOD_ABS, MOD_ABS + 8, CMD_ABS_WHEEL_SPEED_FR, (4,))
         if resp == None:
             return
         return int.from_bytes(resp[0][3:], "big") / 1.0
 
     def read_abs_wheel_speed_rl(self):
+        """
+        Queries ABS for rear left wheel speed.
+        Returns a float in km/h or None if unsuccessful.
+        """
         resp = self.device.query(MOD_ABS, MOD_ABS + 8, CMD_ABS_WHEEL_SPEED_RL, (4,))
         if resp == None:
             return
         return int.from_bytes(resp[0][3:], "big") / 1.0
 
     def read_abs_wheel_speed_rr(self):
+        """
+        Queries ABS for rear right wheel speed.
+        Returns a float in km/h or None if unsuccessful.
+        """
         resp = self.device.query(MOD_ABS, MOD_ABS + 8, CMD_ABS_WHEEL_SPEED_RR, (4,))
         if resp == None:
             return
@@ -109,7 +145,10 @@ class FordReader(object):
     ### API Accesory protocol interface ###
 
     def read_api_gps(self):
-        """GPS location of the car. Returns a dict with lat, lon, heading fields."""
+        """
+        Queries API for GPS location of the car.
+        Returns a dict with lat, lon, heading fields, all floats.
+        """
         resp = self.device.query(MOD_API, MOD_API + 8, CMD_API_GPS, (6,7,7))
         if resp == None:
             return
@@ -141,38 +180,61 @@ class FordReader(object):
     ### PC Powertrain control ###
 
     def read_pc_accelerator_fraction(self):
-        """How much the gas pedal is depressed, from 0.0 (not pressed) to 1.0 (full)."""
+        """
+        Queries PC for how much the gas pedal is depressed.
+        Returns 0.0 (not pressed) to 1.0 (full).
+        """
         resp = self.device.query(MOD_PC, MOD_PC + 8, CMD_PC_ACCELERATOR_FRACTION, (4,))
         if resp == None:
             return
         return int.from_bytes(resp[0][3:], "big") / 255.0
 
     def read_pc_pressure_barometric(self):
+        """
+        Queries PC for the barometric pressure.
+        Returns a float in kPa.
+        """
         resp = self.device.query(MOD_PC, MOD_PC + 8, CMD_PC_PRESSURE_BAROMETRIC, (4,))
         if resp == None:
             return
         return int.from_bytes(resp[0][3:], "big") / 1.0
 
     def read_pc_temperature_ambient(self):
+        """
+        Queries PC for the ambient temperature.
+        Returns a float in Celsius.
+        """
         resp = self.device.query(MOD_PC, MOD_PC + 8, CMD_PC_TEMPERATURE_AMBIENT, (4,))
         if resp == None:
             return
         return int.from_bytes(resp[0][3:], "big") / 2.0 - 40
 
     def read_pc_temperature_intake(self):
+        """
+        Queries PC for the temperature of the engine intake.
+        Returns a float in Celsius.
+        """
         resp = self.device.query(MOD_PC, MOD_PC + 8, CMD_PC_TEMPERATURE_INTAKE, (4,))
         if resp == None:
             return
         return int.from_bytes(resp[0][3:], "big") - 40
 
     def read_pc_time_since_engine_start(self):
-        """Time since engine started, in seconds. Maxes out at 255."""
+        """
+        Queries PC for the time since engine started.
+        Returns a float from 0.0 to 255.0, after which it will remain at 255.0
+        until the next time the car is shut down.
+        """
         resp = self.device.query(MOD_PC, MOD_PC + 8, CMD_PC_TIME_SINCE_ENGINE_START, (4,))
         if resp == None:
             return
         return int.from_bytes(resp[0][3:], "big") / 1.0
 
     def read_pc_total_distance(self):
+        """
+        Queries PC for the total distance driven on the car (odometer)
+        Returns a float in km or None if unsuccessful.
+        """
         resp = self.device.query(MOD_PC, MOD_PC + 8, CMD_PC_TOTAL_DISTANCE, (6,))
         if resp == None:
             return
@@ -181,6 +243,10 @@ class FordReader(object):
     ### SAS Steering angle sensor
 
     def read_sas_steering_angle(self):
+        """
+        Queries SAS for steering angle.
+        Returns a float in degrees or None if unsuccesssful. Right is negative.
+        """
         resp = self.device.query(MOD_SAS, MOD_SAS + 8, CMD_SAS_STEERING_ANGLE, (6,6,7))
         if resp == None:
             return
