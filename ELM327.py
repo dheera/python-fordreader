@@ -22,36 +22,36 @@ class ELM327(object):
         if self.debug:
             print("resetting ...")
 
-        self.ser.reset_input_buffer()
-        self.send("ATZ")    # reset
-        time.sleep(0.1)
-        self.ser.reset_input_buffer()
-        time.sleep(1)
-        resp = self.ser.read_until(b'>')
-        self.send("ATS0")   # spaces off
-        resp = self.ser.read_until(b'>')
-        self.send("ATE0")   # echo off
-        resp = self.ser.read_until(b'>')
-        self.send("ATL0")   # line feeds off
-        resp = self.ser.read_until(b'>')
-        self.send("ATH0")   # headers on
-        resp = self.ser.read_until(b'>')
-        self.send("ATST%02d" % int(self.timeout_resp / 0.004)) # resp timeout
-        resp = self.ser.read_until(b'>')
+        self.reset_buffers()
 
-        self.ser.reset_input_buffer()
+        self.send("ATZ")    # reset
+        time.sleep(1)
+
+        self.reset_buffers()
+
+        if self.debug:
+            print("setting parameters ...")
+
+        self.send_and_wait_for_ok("ATE0")   # echo off
+        self.send_and_wait_for_ok("ATS0")   # spaces off
+        self.send_and_wait_for_ok("ATL0")   # line feeds off
+        self.send_and_wait_for_ok("ATH0")   # headers on
+        self.send_and_wait_for_ok("ATST%02d" % int(self.timeout_resp / 0.004)) # resp timeout
+
+        time.sleep(0.5)
+
+        self.reset_buffers()
 
     def query(self, header, resp_address, command, resp_structure):
+        if self.debug:
+            print("query: ", header, resp_address, command, resp_structure)
+
         if header != self.last_header:
-            self.ser.reset_input_buffer()
-            self.send("ATSH%06x" % header)
-            self.ser.read_until(b'>')
+            self.send_and_wait_for_ok("ATSH%06x" % header)
             self.last_header = header
 
         if resp_address != self.last_resp_address:
-            self.ser.reset_input_buffer()
-            self.send("ATCRA%08x" % resp_address)
-            self.ser.read_until(b'>')
+            self.send_and_wait_for_ok("ATCRA%08x" % resp_address)
             self.last_resp_address = resp_address
 
         resp_num_frames = len(resp_structure)
@@ -63,7 +63,7 @@ class ELM327(object):
         self.ser.reset_input_buffer()
         self.send(command_str)
 
-        resp = self.receive(resp_num_frames)
+        resp = self.receive_frames(resp_num_frames)
 
         if resp == None:
             return
@@ -76,16 +76,33 @@ class ELM327(object):
 
         return resp
 
-    def receive(self, num_frames):
-        resp = []
-        if num_frames > 1:
-            line = self.ser.read_until(b'\r')
+    def receive(self, num_lines):
+        if self.debug:
+            print("receive", num_lines)
 
-        for i in range(num_frames):
+        lines = []
+        for i in range(num_lines):
             line = self.ser.read_until(b'\r')
-            line = line.replace(b'\r',b'')
+            lines.append(line.strip())
+        return(lines)
+
+    def receive_frames(self, num_frames):
+        if self.debug:
+            print("receive_frames", num_frames)
+
+        resp = []
+
+        if num_frames < 1:
+            return []
+
+        elif num_frames == 1:
+            lines = self.receive(1)
+
+        else:
+            lines = self.receive(num_frames + 1)[1:]
+
+        for line in lines:
             line = line.replace(b'>',b'')
-            line = line.replace(b'\r',b'')
 
             if len(line) >= 3 and line[1:2] == b':':
                 line = line[2:]
@@ -105,8 +122,36 @@ class ELM327(object):
         return resp
 
     def send(self, cmd):
-        bytes_out = (cmd + "\r").encode()
         if self.debug:
-            print("sending:", bytes_out)
+            print("send", cmd)
+
+        bytes_out = (cmd + "\r").encode()
         self.ser.write(bytes_out)
+
+    def send_and_wait_for_ok(self, cmd):
+        if self.debug:
+            print("send_and_wait_for_ok", cmd)
+
+        for i in range(10):
+            if self.debug:
+                print("send attempt", i)
+            self.reset_buffers()
+            self.send(cmd)
+            resp = self.receive(1)
+            if b"OK" in resp:
+                if self.debug:
+                    print("received OK, exiting", resp)
+                return
+            else:
+                if self.debug:
+                    print("did not receive OK, received ", resp)
+
+        if self.debug:
+            print("giving up")
+
+    def reset_buffers(self):
+        if self.debug:
+            print("reset_buffers")
+        self.ser.reset_input_buffer()
+        self.ser.reset_output_buffer()
 
