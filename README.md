@@ -1,6 +1,6 @@
 # python-fordreader
 
-Reads extended PID attributes from an OBD device connected to a Ford car.
+Reads extended PID attributes from an OBD device connected to a Ford car, including steering wheel angle and more, that you would not normally get from the standard OBD PIDs.
 
 Example usage:
 
