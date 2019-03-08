@@ -121,6 +121,10 @@ class FordReader(object):
 
     def read_api_gps(self):
         resp = self.device.query(MOD_API, MOD_API + 8, CMD_API_GPS, (6,7,7,))
-        # TODO: figure out how to decode this
-        return resp
+        if resp == None:
+            return
+        lat = int.from_bytes(resp[1][1:3], "big", signed=True) / 60.0
+        lon = int.from_bytes(resp[1][5:7], "big", signed=True) / 60.0
+        heading = int.from_bytes(resp[2][3:5], "big") / 1.0
+        return {"lat": lat, "lon": lon, "heading": heading}
 
