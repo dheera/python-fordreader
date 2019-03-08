@@ -19,6 +19,7 @@ class ELM327(object):
         self.reset()
 
     def reset(self):
+        """Resets the device and sets parameters ready for querying."""
         if self.debug:
             print("resetting ...")
 
@@ -43,6 +44,15 @@ class ELM327(object):
         self.reset_buffers()
 
     def query(self, header, resp_address, command, resp_structure):
+        """
+        Issues a CAN query expecting a response.
+        header: message header, usually related to the module you expect to hear from
+        resp_address: the module you actually want to hear from, usually header + 8
+        command: the command, often 22xxxx for extended PIDs
+        resp_structure: a tuple of ints indicating the structure you expect back.
+          For example (4,) means you expect a single line message with 4 bytes.
+          (6,6) means you expect two lines each with 6 bytes.
+        """
         if self.debug:
             print("query: ", header, resp_address, command, resp_structure)
 
@@ -76,6 +86,7 @@ class ELM327(object):
         return resp
 
     def receive(self):
+        """Receives a single line over serial, agnostic to the content of the line."""
         if self.debug:
             print("receive")
 
@@ -83,6 +94,17 @@ class ELM327(object):
         return(line)
 
     def receive_message(self):
+        """
+        Receives a CAN bus message, including multi-line messages, in which case
+        it repeatedly calls receive() until it gets the correct number of bytes.
+        A single line message looks like this:
+        DEADBEEF
+        A multi line message looks like this (refer to ELM327 documentation):
+        010
+        0:DEADBEEF
+        1:5ADDBEEF
+        where 010 specifies the total number of bytes expected to be received (in hex).
+        """
         resp = [] 
 
         if self.debug:
@@ -105,6 +127,7 @@ class ELM327(object):
 
             if self.debug:
                 print("begin multi-line response for bytes: ", total_num_bytes)
+
             while received_num_bytes < total_num_bytes and i < 10:
                 line = self.receive().replace(b'>', b'').replace(b'\r',b'')
                 try:
@@ -116,8 +139,8 @@ class ELM327(object):
                         print("error: received:", line)
                     return
 
+                # give up if 10 consecutive receives fail to give the correct total number of bytes
                 i += 1
-                
 
         else:
             # single-line message
@@ -135,6 +158,9 @@ class ELM327(object):
         return resp
 
     def send(self, cmd):
+        """
+        Sends a line.
+        """
         if self.debug:
             print("send", cmd)
 
@@ -142,6 +168,10 @@ class ELM327(object):
         self.ser.write(bytes_out)
 
     def send_and_wait_for_ok(self, cmd):
+        """
+        Sends a command and blocks until it receives OK, or
+        gives up after 10 tries. Used for AT commands.
+        """
         if self.debug:
             print("send_and_wait_for_ok", cmd)
 
@@ -163,6 +193,7 @@ class ELM327(object):
             print("giving up")
 
     def reset_buffers(self):
+        """Clears serial input and output buffers."""
         if self.debug:
             print("reset_buffers")
         self.ser.reset_input_buffer()
