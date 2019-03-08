@@ -68,7 +68,7 @@ class ELM327(object):
         if resp == None:
             return
 
-        if len(resp) != len(resp_structure):
+        if tuple(map(len, resp)) != resp_structure:
             if self.debug:
                 print("response did not match expected structure", resp)
                 return
