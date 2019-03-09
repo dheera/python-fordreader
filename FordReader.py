@@ -19,6 +19,7 @@ CMD_ABS_WHEEL_SPEED_RL = 0x222B08
 CMD_ABS_WHEEL_SPEED_RR = 0x222B09
 CMD_ABS_ACCELERATION_LON = 0x222B0C
 CMD_ABS_ACCELERATION_LAT = 0x222B11
+CMD_ABS_BRAKE_PRESSURE = 0x222034
 CMD_ABS_STEERING_ANGLE = 0x223302
 CMD_ABS_TOTAL_DISTANCE = 0x22DD01
 CMD_ABS_VEHICLE_SPEED = 0x22F40D
@@ -71,6 +72,17 @@ class FordReader(object):
         if resp == None:
             return
         return int.from_bytes(resp[0][3:], "big") / 256.0
+
+    def read_abs_brake_pressure(self):
+        """
+        Queries ABS for brake fluid pressure.
+        Returns a float in kPa or None if unsuccessful.
+        """
+        resp = self.device.query(MOD_ABS, MOD_ABS + 8, CMD_ABS_BRAKE_PRESSURE, (5,))
+        if resp == None:
+            return
+        return int.from_bytes(resp[0][3:], "big") * 30.0
+
 
     def read_abs_steering_angle(self):
         """
