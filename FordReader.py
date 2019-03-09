@@ -250,7 +250,7 @@ class FordReader(object):
         resp = self.device.query(MOD_SAS, MOD_SAS + 8, CMD_SAS_STEERING_ANGLE, (6,6,7))
         if resp == None:
             return
-        angle_sign = int.from_bytes(resp[1][4]) * 2 - 1
-        angle_mag = int.from_bytes(resp[0][3:5]) * (90.0 / 2048.0)
+        angle_sign = int.from_bytes(resp[1][5:6], byteorder="big") * 2 - 1
+        angle_mag = int.from_bytes(resp[0][3:5], byteorder="big") * (90.0 / 2048.0)
         return angle_sign * angle_mag
 
