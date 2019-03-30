@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import ELM327
+import elm327
 
 # modules
 
@@ -49,7 +49,7 @@ CMD_PC_TOTAL_DISTANCE = 0x22DD01
 class FordReader(object):
     def __init__(self, port = '/dev/ttyUSB0', baudrate = 500000, timeout_serial = 0.1, timeout_resp = 0.05, debug = False):
         self.debug = debug
-        self.device = ELM327.ELM327(port = port, baudrate = baudrate, timeout_serial = timeout_serial, timeout_resp = timeout_resp, debug = debug)
+        self.device = elm327.ELM327(port = port, baudrate = baudrate, timeout_serial = timeout_serial, timeout_resp = timeout_resp, debug = debug)
 
     ### ABS Anti-lock brake system ###
 
